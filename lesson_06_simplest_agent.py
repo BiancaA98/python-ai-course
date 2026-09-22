@@ -1,55 +1,90 @@
 import os
+import subprocess
 from pathlib import Path
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
 
-def main():
-    # Incarca variabilele din fisierul .env
-    load_dotenv(Path(__file__).resolve().with_name(".env"))
+def run_tests() -> str:
+    try:
+        result = subprocess.run(
+            ["uv", "run", "pytest"],
+            cwd=Path.cwd(),
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        return (result.stdout or "No output") + "" + (result.stderr or "")
+    except Exception as e:
+        print(e)
 
-    # Conectare la OpenRouter
+
+def complete(client: OpenAI, messages: list[dict], tools: list[dict]):
+    response = client.chat.completions.create(
+        messages=messages,
+        model=os.getenv("OPEN_ROUTER_MODEL_NAME"),
+        tools=tools,
+        tool_choice="auto"
+    ).choices[0].message
+
+    return response
+
+
+def main():
+    load_dotenv()
+
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.getenv("OPEN_ROUTER_API_KEY")
     )
 
-    # Lista de mesaje
     messages = []
 
-    # System prompt
     messages.append({
         "role": "system",
         "content": "Use run_tests tool when asked to run any tests."
     })
 
-    # Mesajul utilizatorului
-    messages.append({
-        "role": "user",
-        "content": input("you> ")
-    })
+    while True:
+        inp = input("you> ")
 
-    # Tools disponibile pentru agent
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "run_tests",
-                "description": "Run uv run pytest."
+        if inp == "quit":
+            break
+
+        messages.append({
+            "role": "user",
+            "content": inp
+        })
+
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_tests",
+                    "description": "Run uv run pytest"
+                }
             }
-        }
-    ]
+        ]
 
-    # Trimite cererea catre model
-    response = client.chat.completions.create(
-        messages=messages,
-        model=os.getenv("OPEN_ROUTER_MODEL_NAME"),
-        tools=tools
-    ).choices[0].message
+        response = complete(client, messages, tools)
 
-    # Afiseaza raspunsul
-    print(response)
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                output = run_tests()
+
+                messages.append({
+                    "role": "system",
+                    "tool_call_id": tool_call.tool_call_id,
+                    "content": output
+                })
+
+            response = complete(client, messages, tools)
+            print("agent> ", response)
+
+        print(f"Message count: {len(messages)}")
 
 
 if __name__ == "__main__":
     main()
+    print(run_tests())
