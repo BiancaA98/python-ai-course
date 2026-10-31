@@ -119,7 +119,6 @@ def run_tests() -> str:
     except Exception as e:
         print(e)
 
-
 def complete(client: OpenAI, messages: list[dict], tools: list[dict]):
     response = client.chat.completions.create(
         messages=messages,
@@ -128,7 +127,6 @@ def complete(client: OpenAI, messages: list[dict], tools: list[dict]):
         tool_choice="auto"
     ).choices[0].message
     return response
-
 
 # avem agentul. trebuie sa-i dam instructiuni despre cum sa ruleze o unealta oferita de noi.
 
@@ -168,19 +166,15 @@ def main():
     ]
 
     messages = []
-
     # system prompt.
     messages.append({
         "role": "system",
         "content": "You are a helpful assistant. If the user asks to run some tests, please only run the run_tests tool that you have at your disposal. If instead, the user asks to summarize a file, use the provided summarize_file tool that you have. If the user asks to analyze a file or count words in a file, use the provided analyze_document tool that you have."
     })
-
     while True:
         inp = input("you> ")
-
         if inp == "quit":
             break
-
         messages.append({
             "role": "user",
             "content": inp
@@ -194,7 +188,6 @@ def main():
             for tool_call in response.tool_calls:
                 tool_name = tool_call.function.name
                 args = json.loads(tool_call.function.arguments)
-
                 if tool_name == "summarize_file":
                     output = summarize_file(client, args)
                 elif tool_name == "run_tests":
