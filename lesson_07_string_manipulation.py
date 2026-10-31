@@ -1,3 +1,4 @@
+
 # ce e un string? de ce il folosim? ce e in spate?
 
 var1 = "a"
@@ -11,13 +12,11 @@ It's a multi-line string.
 arr1 = [10, 20, 30, 60, 100]
 #        0   1   2   3    4
 msg = "LLM Agents are agents that usually process strings as tokens. it tokenizes them."
-
 print(len(msg))
 print(msg[-5])
 print("ken" in msg)
 print(msg.find("tok"))
 print(msg[38])
-
 # string is immutable
 # msg[0] = "x" - does not work!
 # mutable sau immutable.
@@ -27,7 +26,6 @@ list1[0] = 300
 
 print(msg.lower())
 print(msg)
-
 # split a string by separator:
 split_string = msg.split(" ")
 print(split_string)
